@@ -18,15 +18,19 @@ def split_items(raw_text: str) -> List[Dict[str, str]]:
         channel = "other"
         title = ""
         body_lines: List[str] = []
+        seen_body = False  # headers are only recognized before real body content
         for line in chunk.splitlines():
             stripped = line.strip()
             low = stripped.lower()
-            if low.startswith("channel:") and not body_lines:
+            if not seen_body and low.startswith("channel:"):
                 value = stripped.split(":", 1)[1].strip().lower()
                 channel = value if value in VALID_CHANNELS else "other"
-            elif low.startswith("title:") and not body_lines:
+            elif not seen_body and low.startswith("title:"):
                 title = stripped.split(":", 1)[1].strip()
+            elif not seen_body and not stripped:
+                continue  # skip blank lines before any body/header content
             else:
+                seen_body = True
                 body_lines.append(line)
         body = "\n".join(body_lines).strip()
         if not body and not title:

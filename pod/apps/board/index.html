@@ -126,9 +126,11 @@ async function loadNotes(){
   }catch(e){}
 }
 
-function fnRun(name, data){
-  try { return client.functions.run(name, data); }
-  catch(e){ return client.functions.run({ functionName:name, data:data }); }
+async function fnRun(name, data){
+  // await so a rejected promise (wrong signature) actually hits the fallback,
+  // not just a synchronous throw.
+  try { return await client.functions.run(name, data); }
+  catch(e){ return await client.functions.run({ functionName:name, data:data }); }
 }
 async function updateIssue(id, status){
   var cur = issues.get(id); if(cur){ cur.status=status; issues.set(id,cur); render(); }
@@ -148,7 +150,8 @@ async function onTriage(){
 async function onNotes(){
   toast('Generating release notes...');
   try { await fnRun('start_release_notes', {}); } catch(e){}
-  setTimeout(loadNotes, 9000);
+  // the workflow writes the release row asynchronously; refresh a few times.
+  [6000, 12000, 20000].forEach(function(ms){ setTimeout(loadNotes, ms); });
 }
 
 function buildCard(r){

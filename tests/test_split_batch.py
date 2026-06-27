@@ -33,3 +33,20 @@ def test_drops_blank_items():
 def test_empty_input_returns_empty_list():
     assert split_batch("") == []
     assert split_batch("   \n  ") == []
+
+
+def test_headers_recognized_after_leading_blank_lines():
+    # A blank line before the headers must not break header parsing.
+    raw = "\n\nChannel: github\nTitle: Broken export\nExport yields an empty file."
+    items = split_batch(raw)
+    assert items[0]["channel"] == "github"
+    assert items[0]["title"] == "Broken export"
+    assert items[0]["body"] == "Export yields an empty file."
+
+
+def test_text_after_body_is_not_parsed_as_header():
+    # A 'Title:'-looking line that appears after real body text stays in the body.
+    raw = "Something broke.\nTitle: not a header here"
+    items = split_batch(raw)
+    assert items[0]["title"] == ""
+    assert "Title: not a header here" in items[0]["body"]
