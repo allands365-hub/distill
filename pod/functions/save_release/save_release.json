@@ -1,0 +1,10 @@
+{
+  "name": "save_release",
+  "description": "Create a releases row with the generated markdown notes and the source issue ids.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "releases",
+      "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"] }
+  ] }
+}

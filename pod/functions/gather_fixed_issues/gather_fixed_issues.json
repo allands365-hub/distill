@@ -1,0 +1,10 @@
+{
+  "name": "gather_fixed_issues",
+  "description": "Read all issues with status=fixed and return them for release-note generation.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "issues",
+      "permission_ids": ["datastore.table.read", "datastore.record.read"] }
+  ] }
+}

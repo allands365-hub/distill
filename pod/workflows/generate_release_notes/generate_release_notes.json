@@ -1,0 +1,24 @@
+{
+  "name": "generate_release_notes",
+  "description": "Gather fixed issues, generate markdown release notes with the release_notes agent, and save a releases row.",
+  "start": { "type": "MANUAL" },
+  "visibility": "POD",
+  "nodes": [
+    { "id": "gather", "type": "FUNCTION", "label": "Gather fixed issues",
+      "config": { "function_name": "gather_fixed_issues", "input_mapping": {} } },
+    { "id": "write_notes", "type": "AGENT", "label": "Write release notes",
+      "config": { "agent_name": "release_notes",
+        "input_mapping": { "issues": { "type": "expression", "value": "gather.issues" } } } },
+    { "id": "persist", "type": "FUNCTION", "label": "Save release",
+      "config": { "function_name": "save_release",
+        "input_mapping": {
+          "notes_md": { "type": "expression", "value": "write_notes.notes_md" },
+          "issue_ids": { "type": "expression", "value": "gather.ids" } } } },
+    { "id": "end", "type": "END", "label": "Done" }
+  ],
+  "edges": [
+    { "id": "e1", "source": "gather", "target": "write_notes" },
+    { "id": "e2", "source": "write_notes", "target": "persist" },
+    { "id": "e3", "source": "persist", "target": "end" }
+  ]
+}
