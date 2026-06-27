@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Distill -- Bug Triage &amp; Release Operator</title>
+<style>
+  :root{
+    --bg:#f6f6f4; --panel:#ffffff; --ink:#1a1a22; --muted:#6b7180; --line:#e6e6e0;
+    --accent:#4f46e5; --accent-ink:#ffffff;
+    --p0:#dc2626; --p1:#ea580c; --p2:#d9a406; --p3:#64748b;
+    --chip:#f0f0ee;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding:16px 22px}
+  .brand{display:flex;align-items:baseline;gap:12px}
+  .brand h1{margin:0;font-size:20px;letter-spacing:-.02em}
+  .brand span{color:var(--muted);font-size:13px}
+  .bar{display:flex;gap:10px;margin-top:12px;align-items:flex-start;flex-wrap:wrap}
+  textarea{flex:1;min-width:280px;min-height:46px;max-height:140px;resize:vertical;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;background:#fff}
+  button{border:0;border-radius:10px;padding:10px 14px;font:inherit;font-weight:600;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+  button.ghost{background:var(--chip);color:var(--ink)}
+  button:disabled{opacity:.5;cursor:default}
+  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1a1a22;color:#fff;padding:10px 16px;border-radius:10px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:20}
+  .toast.show{opacity:1}
+  main{padding:18px 22px 40px}
+  .board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(248px,1fr);gap:14px;overflow-x:auto;align-items:start}
+  .col{background:transparent}
+  .col h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 10px;display:flex;justify-content:space-between}
+  .col h2 b{color:var(--ink)}
+  .card{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+  .card.p-P0{border-left-color:var(--p0)} .card.p-P1{border-left-color:var(--p1)}
+  .card.p-P2{border-left-color:var(--p2)} .card.p-P3{border-left-color:var(--p3)}
+  .ctitle{font-weight:600;margin:0 0 6px;font-size:14px}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .chip{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--ink)}
+  .chip.t-bug{background:#fde8e8;color:#b42318} .chip.t-feature{background:#e8f0fe;color:#1d4ed8}
+  .chip.t-question{background:#eef2f6;color:#475569} .chip.t-duplicate{background:#f3e8ff;color:#7e22ce}
+  .chip.t-spam{background:#f1f1ef;color:#71717a}
+  .chip.pri{color:#fff}
+  .pri.P0{background:var(--p0)} .pri.P1{background:var(--p1)} .pri.P2{background:var(--p2)} .pri.P3{background:var(--p3)}
+  .conf{font-variant-numeric:tabular-nums;color:var(--muted);font-size:11px}
+  .reason{color:var(--muted);font-size:12px;margin:6px 0}
+  .repro{font-size:12px;white-space:pre-wrap;background:#fafafa;border:1px solid var(--line);border-radius:8px;padding:8px;margin-top:8px;max-height:120px;overflow:auto}
+  .link{font-size:11px;color:var(--accent)}
+  .act{margin-top:8px;display:flex;gap:6px}
+  .act button{padding:6px 10px;font-size:12px}
+  .empty{color:var(--muted);font-size:12px;padding:10px;border:1px dashed var(--line);border-radius:10px;text-align:center}
+  .notes{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:18px;white-space:pre-wrap}
+  .notes h3{margin-top:0}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><h1>Distill</h1><span>AI Bug Triage &amp; Release Operator</span></div>
+  <div class="bar">
+    <textarea id="batch" placeholder="Paste messy feedback here..."></textarea>
+    <button id="triageBtn">Triage</button>
+    <button id="notesBtn" class="ghost">Generate Release Notes</button>
+  </div>
+</header>
+<main>
+  <div class="board" id="board"></div>
+  <div id="notesPanel"></div>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+(function(){
+  var cfg = window.__LEMMA_CONFIG__ || {};
+  var base = (cfg.apiUrl || window.location.origin).replace(/\/$/,'');
+  var s = document.createElement('script');
+  s.src = base + '/public/sdk/lemma-client.js';
+  s.onload = boot;
+  s.onerror = function(){ document.getElementById('board').textContent = 'Failed to load Lemma SDK.'; };
+  document.head.appendChild(s);
+})();
+
+var client, issues = new Map();
+var COLS = [['incoming','Incoming'],['triaged','Triaged'],['needs_approval','Needs Approval'],['approved','Approved'],['fixed','Fixed']];
+
+function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},2600); }
+function esc(x){ return (x==null?'':String(x)).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
+
+async function boot(){
+  client = new window.LemmaClient.LemmaClient();
+  var st = await client.initialize();
+  if (st && st.status && st.status !== 'authenticated'){ client.auth.redirectToAuth(); return; }
+  await loadIssues();
+  await loadNotes();
+  try {
+    client.datastore.watchChanges({ table:'issues', onChange:function(f){
+      if(f.operation==='delete') issues.delete(f.record_id);
+      else issues.set(f.record_id, Object.assign({}, issues.get(f.record_id)||{}, f.payload||{}, {id:f.record_id}));
+      render();
+    }});
+  } catch(e){ /* watch optional */ }
+  document.getElementById('triageBtn').onclick = onTriage;
+  document.getElementById('notesBtn').onclick = onNotes;
+}
+
+async function loadIssues(){
+  var res = await client.records.list('issues',{limit:200});
+  var items = (res && res.items) || res || [];
+  issues = new Map(); items.forEach(function(r){ issues.set(r.id, r); });
+  render();
+}
+async function loadNotes(){
+  try{
+    var res = await client.records.list('releases',{limit:20});
+    var items = (res && res.items) || res || [];
+    items.sort(function(a,b){ return (b.created_at||'').localeCompare(a.created_at||''); });
+    var el = document.getElementById('notesPanel');
+    if(!items.length){ el.textContent=''; return; }
+    var div = document.createElement('div');
+    div.className = 'notes';
+    var h3 = document.createElement('h3');
+    h3.textContent = 'Latest Release Notes';
+    var pre = document.createElement('pre');
+    pre.style.whiteSpace = 'pre-wrap';
+    pre.textContent = items[0].notes_md || '';
+    div.appendChild(h3);
+    div.appendChild(pre);
+    el.textContent = '';
+    el.appendChild(div);
+  }catch(e){}
+}
+
+function fnRun(name, data){
+  try { return client.functions.run(name, data); }
+  catch(e){ return client.functions.run({ functionName:name, data:data }); }
+}
+async function updateIssue(id, status){
+  var cur = issues.get(id); if(cur){ cur.status=status; issues.set(id,cur); render(); }
+  try { await client.records.update('issues', id, { status:status }); }
+  catch(e){
+    try { await client.records.update({ tableName:'issues', recordId:id, payload:{status:status} }); }
+    catch(e2){ await fnRun('set_status', { issue_id:id, status:status }); }
+  }
+}
+async function onTriage(){
+  var ta=document.getElementById('batch'); var text=(ta.value||'').trim();
+  if(!text){ toast('Paste some feedback first.'); return; }
+  toast('Triaging... new issues will appear shortly.');
+  try { await fnRun('start_triage', { raw_text:text }); } catch(e){ /* fire-and-forget */ }
+  ta.value='';
+}
+async function onNotes(){
+  toast('Generating release notes...');
+  try { await fnRun('start_release_notes', {}); } catch(e){}
+  setTimeout(loadNotes, 9000);
+}
+
+function buildCard(r){
+  var wrap = document.createElement('div');
+  wrap.className = 'card' + (r.priority ? ' p-'+r.priority : '');
+
+  var chips = document.createElement('div');
+  chips.className = 'chips';
+
+  var typeChip = document.createElement('span');
+  typeChip.className = 'chip t-'+(r.type||'');
+  typeChip.textContent = r.type || '?';
+  chips.appendChild(typeChip);
+
+  if(r.priority){
+    var priChip = document.createElement('span');
+    priChip.className = 'chip pri '+r.priority;
+    priChip.textContent = r.priority;
+    chips.appendChild(priChip);
+  }
+  if(r.confidence != null){
+    var conf = document.createElement('span');
+    conf.className = 'conf';
+    conf.textContent = 'conf '+Number(r.confidence).toFixed(2);
+    chips.appendChild(conf);
+  }
+  wrap.appendChild(chips);
+
+  var title = document.createElement('p');
+  title.className = 'ctitle';
+  title.textContent = r.title || (r.source_text||'').slice(0,60);
+  wrap.appendChild(title);
+
+  if(r.reasoning){
+    var reason = document.createElement('div');
+    reason.className = 'reason';
+    reason.textContent = r.reasoning;
+    wrap.appendChild(reason);
+  }
+  if(r.linked_to){
+    var link = document.createElement('div');
+    link.className = 'link';
+    link.textContent = 'linked to existing issue';
+    wrap.appendChild(link);
+  }
+  if(r.repro_steps){
+    var repro = document.createElement('div');
+    repro.className = 'repro';
+    repro.textContent = r.repro_steps;
+    wrap.appendChild(repro);
+  }
+
+  if(r.status==='needs_approval'){
+    var act = document.createElement('div');
+    act.className = 'act';
+    var btn = document.createElement('button');
+    btn.textContent = 'Approve';
+    btn.onclick = function(){ window.approve(r.id); };
+    act.appendChild(btn);
+    wrap.appendChild(act);
+  } else if(r.status==='approved'){
+    var act2 = document.createElement('div');
+    act2.className = 'act';
+    var btn2 = document.createElement('button');
+    btn2.className = 'ghost';
+    btn2.textContent = 'Mark Fixed';
+    btn2.onclick = function(){ window.markFixed(r.id); };
+    act2.appendChild(btn2);
+    wrap.appendChild(act2);
+  }
+  return wrap;
+}
+
+function render(){
+  var all=[...issues.values()];
+  var board=document.getElementById('board');
+  board.textContent = '';
+  COLS.forEach(function(c){
+    var rows=all.filter(function(r){return (r.status||'incoming')===c[0];});
+    var col = document.createElement('div');
+    col.className = 'col';
+    var h2 = document.createElement('h2');
+    h2.textContent = c[1]+' ';
+    var b = document.createElement('b');
+    b.textContent = rows.length;
+    h2.appendChild(b);
+    col.appendChild(h2);
+    if(rows.length){
+      rows.forEach(function(r){ col.appendChild(buildCard(r)); });
+    } else {
+      var empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = '—';
+      col.appendChild(empty);
+    }
+    board.appendChild(col);
+  });
+}
+window.approve=function(id){ updateIssue(id,'approved'); };
+window.markFixed=function(id){ updateIssue(id,'fixed'); };
+</script>
+</body>
+</html>
