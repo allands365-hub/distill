@@ -1,0 +1,10 @@
+{
+  "name": "set_status",
+  "description": "Update one issue's status (used by the app for approve / mark-fixed).",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "issues",
+      "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"] }
+  ] }
+}

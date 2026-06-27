@@ -1,0 +1,10 @@
+{
+  "name": "start_release_notes",
+  "description": "Kick off the generate_release_notes workflow.",
+  "type": "JOB",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "workflow", "resource_name": "generate_release_notes",
+      "permission_ids": ["workflow.read", "workflow.execute"] }
+  ] }
+}

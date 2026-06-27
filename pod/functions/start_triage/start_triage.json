@@ -1,0 +1,10 @@
+{
+  "name": "start_triage",
+  "description": "Kick off the triage_batch workflow for a pasted batch of feedback.",
+  "type": "JOB",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "workflow", "resource_name": "triage_batch",
+      "permission_ids": ["workflow.read", "workflow.execute"] }
+  ] }
+}
