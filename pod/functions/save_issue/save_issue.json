@@ -1,0 +1,10 @@
+{
+  "name": "save_issue",
+  "description": "Create one triaged issue row in the issues table and return its id.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "issues",
+      "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"] }
+  ] }
+}
