@@ -1,0 +1,11 @@
+{
+  "name": "releases",
+  "primary_key_column": "id",
+  "enable_rls": false,
+  "visibility": "POD",
+  "columns": [
+    { "name": "notes_md", "type": "TEXT", "required": true, "max_length": 16000 },
+    { "name": "issue_ids", "type": "JSON", "required": false }
+  ],
+  "config": {}
+}

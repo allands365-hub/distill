@@ -1,0 +1,23 @@
+{
+  "name": "issues",
+  "primary_key_column": "id",
+  "enable_rls": false,
+  "visibility": "POD",
+  "columns": [
+    { "name": "source_text", "type": "TEXT", "required": true, "max_length": 8000 },
+    { "name": "source_channel", "type": "ENUM", "required": true, "default": "other",
+      "options": ["slack", "email", "github", "support", "other"] },
+    { "name": "title", "type": "TEXT", "required": false, "max_length": 240 },
+    { "name": "type", "type": "ENUM", "required": true, "default": "question",
+      "options": ["bug", "feature", "question", "duplicate", "spam"] },
+    { "name": "confidence", "type": "FLOAT", "required": false },
+    { "name": "priority", "type": "ENUM", "required": false,
+      "options": ["P0", "P1", "P2", "P3"] },
+    { "name": "reasoning", "type": "TEXT", "required": false, "max_length": 2000 },
+    { "name": "repro_steps", "type": "TEXT", "required": false, "max_length": 4000 },
+    { "name": "linked_to", "type": "TEXT", "required": false, "max_length": 64 },
+    { "name": "status", "type": "ENUM", "required": true, "default": "incoming",
+      "options": ["incoming", "triaged", "needs_approval", "approved", "fixed"] }
+  ],
+  "config": {}
+}

@@ -1,0 +1,5 @@
+{
+  "format_version": 2,
+  "name": "distill",
+  "description": "AI Bug Triage & Release Operator: turns messy multi-source feedback into classified, prioritized, deduplicated, reproduction-stepped issues with a human approval gate and generated release notes."
+}
