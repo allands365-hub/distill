@@ -12,12 +12,22 @@ def _normalize(item: Dict[str, str]) -> str:
     return f"{item.get('title','')} {item.get('body','')}".lower().strip()
 
 
+def _ratio(a: str, b: str) -> float:
+    return SequenceMatcher(None, a, b).ratio()
+
+
 def find_duplicates(item: Dict[str, str], existing: List[Dict[str, Any]],
                     threshold: float = 0.6) -> Dict[str, Any]:
     query = _normalize(item)
+    q_title = (item.get("title") or "").lower().strip()
     candidates = []
     for other in existing:
-        score = SequenceMatcher(None, query, _normalize(other)).ratio()
+        combined = _ratio(query, _normalize(other))
+        o_title = (other.get("title") or "").lower().strip()
+        # Title-to-title similarity catches paraphrased duplicates whose bodies
+        # differ in structure (e.g. one has numbered repro steps, one is prose).
+        title_sim = _ratio(q_title, o_title) if (q_title and o_title) else 0.0
+        score = max(combined, title_sim)
         candidates.append({"id": other["id"], "score": round(score, 4)})
     candidates.sort(key=lambda c: c["score"], reverse=True)
     linked_to: Optional[str] = None
