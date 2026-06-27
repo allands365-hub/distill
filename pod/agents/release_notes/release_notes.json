@@ -1,0 +1,31 @@
+{
+  "name": "release_notes",
+  "description": "Writes friendly markdown release notes from a list of fixed issues.",
+  "instruction": { "$file": "instruction.md" },
+  "toolsets": [],
+  "visibility": "POD",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "issues": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "title": { "type": "string" },
+            "type": { "type": "string" },
+            "priority": { "type": "string" },
+            "reasoning": { "type": "string" }
+          }
+        }
+      }
+    },
+    "required": ["issues"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": { "notes_md": { "type": "string" } },
+    "required": ["notes_md"]
+  },
+  "permissions": { "grants": [] }
+}

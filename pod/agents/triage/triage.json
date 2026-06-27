@@ -1,0 +1,25 @@
+{
+  "name": "triage",
+  "description": "Classifies a piece of raw user feedback as bug/feature/question/duplicate/spam with a confidence score.",
+  "instruction": { "$file": "instruction.md" },
+  "toolsets": [],
+  "visibility": "POD",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "body": { "type": "string" }
+    },
+    "required": ["body"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "type": { "type": "string", "enum": ["bug", "feature", "question", "duplicate", "spam"] },
+      "confidence": { "type": "number" },
+      "reasoning": { "type": "string" }
+    },
+    "required": ["type", "confidence", "reasoning"]
+  },
+  "permissions": { "grants": [] }
+}

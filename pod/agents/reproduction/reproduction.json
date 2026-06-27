@@ -1,0 +1,25 @@
+{
+  "name": "reproduction",
+  "description": "Generates reproduction steps, expected behavior, and observed behavior for a bug report.",
+  "instruction": { "$file": "instruction.md" },
+  "toolsets": [],
+  "visibility": "POD",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "body": { "type": "string" }
+    },
+    "required": ["body"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "repro_steps": { "type": "string" },
+      "expected_behavior": { "type": "string" },
+      "observed_behavior": { "type": "string" }
+    },
+    "required": ["repro_steps", "expected_behavior", "observed_behavior"]
+  },
+  "permissions": { "grants": [] }
+}
