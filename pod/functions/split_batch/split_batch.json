@@ -1,0 +1,7 @@
+{
+  "name": "split_batch",
+  "description": "Split a pasted batch of feedback into discrete items (separated by --- lines, with optional Channel:/Title: headers).",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [] }
+}

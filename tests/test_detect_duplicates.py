@@ -1,4 +1,4 @@
-from pod.functions.detect_duplicates import detect_duplicates
+from pod.functions.detect_duplicates.code import find_duplicates as detect_duplicates
 
 
 EXISTING = [

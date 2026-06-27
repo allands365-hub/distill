@@ -1,4 +1,4 @@
-from pod.functions.detect_priority import detect_priority
+from pod.functions.detect_priority.code import score_priority as detect_priority
 
 
 def test_non_bug_returns_none():

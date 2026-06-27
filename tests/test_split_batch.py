@@ -1,4 +1,4 @@
-from pod.functions.split_batch import split_batch
+from pod.functions.split_batch.code import split_items as split_batch
 
 
 def test_splits_on_triple_dash():

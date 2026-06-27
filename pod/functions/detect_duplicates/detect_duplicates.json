@@ -1,0 +1,10 @@
+{
+  "name": "detect_duplicates",
+  "description": "Find the most similar existing issue (difflib over title+body) and link if above threshold. Reads the issues table.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "issues",
+      "permission_ids": ["datastore.table.read", "datastore.record.read"] }
+  ] }
+}

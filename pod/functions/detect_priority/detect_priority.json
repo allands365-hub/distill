@@ -1,0 +1,7 @@
+{
+  "name": "detect_priority",
+  "description": "Deterministic P0-P3 priority scoring for bugs (keyword rubric + impact boost). Returns nulls for non-bugs.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [] }
+}
