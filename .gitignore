@@ -5,3 +5,4 @@ __pycache__/
 .lemma-ref/
 node_modules/
 .playwright-mcp/
+payloads/

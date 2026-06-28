@@ -1,0 +1,11 @@
+{
+  "name": "whatsapp",
+  "platform": "WHATSAPP",
+  "default_agent_name": "assistant",
+  "credential_mode": "SYSTEM",
+  "account_id": "019f0f34-4acd-7369-a8d2-ef2df71ba247",
+  "is_enabled": true,
+  "config": {
+    "dm_conversation_reset_after_hours": 24
+  }
+}
