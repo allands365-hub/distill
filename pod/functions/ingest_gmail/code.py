@@ -35,20 +35,36 @@ def _extract(msg: Dict[str, Any]) -> Dict[str, str]:
     body = (msg.get("messageText") or msg.get("body") or msg.get("snippet")
             or msg.get("preview") or msg.get("text") or "")
     if isinstance(body, dict):
-        body = body.get("text") or body.get("content") or body.get("data") or ""
-    return {"subject": str(subject).strip(), "body": str(body).strip()}
+        body = body.get("text") or body.get("content") or body.get("body") or body.get("data") or ""
+    # emails can be long; the issues.source_text column is capped, so truncate.
+    return {"subject": str(subject).strip(), "body": str(body).strip()[:4000]}
+
+
+def _list_in(d: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:
+    for key in ("messages", "emails", "items", "results", "data"):
+        val = d.get(key)
+        if isinstance(val, list):
+            return [m for m in val if isinstance(m, dict)]
+    return None
 
 
 def _messages(result: Any) -> List[Dict[str, Any]]:
-    """Find the list of messages inside the (variable) operation result."""
-    obj = result.get("data") if isinstance(result, dict) else result
-    if isinstance(obj, list):
-        return [m for m in obj if isinstance(m, dict)]
-    if isinstance(obj, dict):
-        for key in ("messages", "emails", "data", "items", "results"):
-            val = obj.get(key)
-            if isinstance(val, list):
-                return [m for m in val if isinstance(m, dict)]
+    """Find the message list in the (variable) operation result.
+
+    GMAIL_FETCH_EMAILS returns the list at the TOP level (result["messages"]);
+    some ops nest it under result["data"]. Check both.
+    """
+    if isinstance(result, list):
+        return [m for m in result if isinstance(m, dict)]
+    if isinstance(result, dict):
+        got = _list_in(result)
+        if got is not None:
+            return got
+        inner = result.get("data")
+        if isinstance(inner, dict):
+            got = _list_in(inner)
+            if got is not None:
+                return got
     return []
 
 
