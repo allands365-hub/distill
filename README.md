@@ -105,3 +105,25 @@ filter triggers the `triage_email` workflow automatically — classified, priori
 deduped, and saved to the board with no button press (lights up the Schedules
 primitive). Verify firing by emailing a bug report to the connected inbox and
 watching the board after the trigger's polling interval.
+
+## Runtime (BYO OpenAI vs Lemma) — flip per situation
+
+Agents default to the **BYO OpenAI** runtime profile (conserves Lemma credits during
+dev). For the demo / judging — or as a fallback if the OpenAI runtime hangs — flip the
+demo-critical agents to Lemma's native runtime:
+
+```powershell
+pwsh demo/runtime_demo.ps1   # triage/reproduction/release_notes/assistant -> system:lemma
+pwsh demo/runtime_dev.ps1    # flip back to the BYO OpenAI key
+```
+(`repro_runner` always runs on `system:lemma` — the sandbox `WORKSPACE_CLI` toolset
+requires the native runtime.)
+
+## Connectors & surfaces status
+
+- **Gmail** — connected; `ingest_gmail` + "Pull from Gmail" + `gmail-inbound` auto-triage schedule.
+- **Slack** — connected; `assistant` surface (Q&A) + P0 alert (`notify_slack` + `notify_p0` schedule).
+- **Linear** — connected; `create_linear_issue` (triaged bug → Linear issue) + card button.
+- **WhatsApp** — account connected + surface bound to `assistant`, **but** Lemma's WhatsApp
+  connector operations aren't provisioned yet (`send_text_message` → 404) and inbound needs
+  the Meta webhook configured. Wired, pending platform/Meta resolution — not demo-critical.
