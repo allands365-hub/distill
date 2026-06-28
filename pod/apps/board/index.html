@@ -49,6 +49,12 @@
   .empty{color:var(--muted);font-size:12px;padding:10px;border:1px dashed var(--line);border-radius:10px;text-align:center}
   .notes{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:18px;white-space:pre-wrap}
   .notes h3{margin-top:0}
+  .connbar{display:flex;gap:8px;align-items:center;padding:8px 22px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .connbar .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-right:4px}
+  .conn{display:flex;align-items:center;gap:6px;font-size:12px;border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+  .dot{width:8px;height:8px;border-radius:50%;background:#cbd2dc}
+  .dot.on{background:#16a34a}
+  .conn button{padding:3px 8px;font-size:11px;border-radius:8px}
 </style>
 </head>
 <body>
@@ -61,6 +67,7 @@
     <button id="notesBtn" class="ghost">Generate Release Notes</button>
   </div>
 </header>
+<div class="connbar" id="connbar"></div>
 <main>
   <div class="board" id="board"></div>
   <div id="notesPanel"></div>
@@ -79,6 +86,10 @@
 
 var client, issues = new Map();
 var COLS = [['incoming','Incoming'],['triaged','Triaged'],['needs_approval','Needs Approval'],['approved','Approved'],['fixed','Fixed']];
+var _cfg = window.__LEMMA_CONFIG__ || {};
+// Connector methods are org-scoped; try the injected config, fall back to this pod's org id.
+var ORG_ID = _cfg.orgId || _cfg.organizationId || _cfg.org_id || "019f099b-4f6e-7468-a09a-514639c8e98a";
+var CONNECTORS = [["gmail","Gmail"],["slack","Slack"],["linear","Linear"]];
 
 function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},2600); }
 function esc(x){ return (x==null?'':String(x)).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
@@ -99,6 +110,7 @@ async function boot(){
   document.getElementById('triageBtn').onclick = onTriage;
   document.getElementById('gmailBtn').onclick = onGmail;
   document.getElementById('notesBtn').onclick = onNotes;
+  loadConnections();
 }
 
 async function loadIssues(){
@@ -258,6 +270,46 @@ function render(){
 }
 window.approve=function(id){ updateIssue(id,'approved'); };
 window.markFixed=function(id){ updateIssue(id,'fixed'); };
+
+async function loadConnections(){
+  var connected = {};
+  try {
+    var res = await client.connectors.accounts.list(ORG_ID, { limit:100 });
+    var items = (res && res.items) || res || [];
+    items.forEach(function(a){
+      if (String(a.status||'').toUpperCase()==='CONNECTED') connected[a.connector_id] = { email:a.email };
+    });
+  } catch(e){ /* org scope / perms — render all as not-connected */ }
+  renderConnections(connected);
+}
+function renderConnections(connected){
+  var bar=document.getElementById('connbar'); if(!bar) return;
+  bar.textContent='';
+  var lbl=document.createElement('span'); lbl.className='lbl'; lbl.textContent='Connections'; bar.appendChild(lbl);
+  CONNECTORS.forEach(function(c){
+    var id=c[0], name=c[1], on=!!connected[id];
+    var pill=document.createElement('span'); pill.className='conn';
+    var dot=document.createElement('span'); dot.className='dot'+(on?' on':''); pill.appendChild(dot);
+    var t=document.createElement('span');
+    t.textContent = name + (on && connected[id].email ? (' · '+connected[id].email) : '');
+    pill.appendChild(t);
+    if(!on){
+      var b=document.createElement('button'); b.className='ghost'; b.textContent='Connect';
+      b.onclick=function(){ window.connect(id); }; pill.appendChild(b);
+    }
+    bar.appendChild(pill);
+  });
+}
+window.connect=async function(connectorId){
+  toast('Opening '+connectorId+' connect…');
+  try {
+    var res = await client.connectors.createConnectRequest(ORG_ID, connectorId);
+    var url = res && (res.authorization_url || res.url || res.redirect_url);
+    if(url){ window.open(url,'_blank','noopener'); toast('Authorize in the new tab, then it will refresh.'); }
+    else { toast('No authorization URL returned (already connected?).'); }
+  } catch(e){ toast('Connect failed — an admin may need to create the auth-config first.'); }
+  setTimeout(loadConnections, 8000);
+};
 </script>
 </body>
 </html>
