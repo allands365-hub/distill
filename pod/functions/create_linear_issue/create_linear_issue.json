@@ -1,0 +1,11 @@
+{
+  "name": "create_linear_issue",
+  "description": "Create a Linear issue from a triaged Distill issue and (best-effort) store its URL.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "connector", "resource_name": "linear", "permission_ids": ["connector.use"] },
+    { "resource_type": "datastore_table", "resource_name": "issues",
+      "permission_ids": ["datastore.table.read","datastore.record.read","datastore.record.write"] }
+  ] }
+}

@@ -17,7 +17,8 @@
     { "name": "repro_steps", "type": "TEXT", "required": false, "max_length": 4000 },
     { "name": "linked_to", "type": "TEXT", "required": false, "max_length": 64 },
     { "name": "status", "type": "ENUM", "required": true, "default": "incoming",
-      "options": ["incoming", "triaged", "needs_approval", "approved", "fixed"] }
+      "options": ["incoming", "triaged", "needs_approval", "approved", "fixed"] },
+    { "name": "external_url", "type": "TEXT", "required": false, "max_length": 300 }
   ],
   "config": {}
 }

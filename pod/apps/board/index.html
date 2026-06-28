@@ -240,6 +240,26 @@ function buildCard(r){
     act2.appendChild(btn2);
     wrap.appendChild(act2);
   }
+  if(r.type==='bug'){
+    var actL = document.createElement('div');
+    actL.className = 'act';
+    if(r.external_url){
+      var lnkL = document.createElement('a');
+      lnkL.className = 'link';
+      lnkL.href = r.external_url;
+      lnkL.target = '_blank';
+      lnkL.rel = 'noopener noreferrer';
+      lnkL.textContent = 'View in Linear';
+      actL.appendChild(lnkL);
+    } else {
+      var btnL = document.createElement('button');
+      btnL.className = 'ghost';
+      btnL.textContent = '→ Linear';
+      (function(rid){ btnL.onclick = function(){ window.toLinear(rid); }; })(r.id);
+      actL.appendChild(btnL);
+    }
+    wrap.appendChild(actL);
+  }
   return wrap;
 }
 
@@ -270,6 +290,7 @@ function render(){
 }
 window.approve=function(id){ updateIssue(id,'approved'); };
 window.markFixed=function(id){ updateIssue(id,'fixed'); };
+window.toLinear=async function(id){ toast('Creating Linear issue…'); try{ var r=await fnRun('create_linear_issue',{issue_id:id}); toast(r && r.url ? ('Created: '+r.url) : 'Linear issue created.'); }catch(e){ toast('Linear create failed.'); } };
 
 async function loadConnections(){
   var connected = {};
