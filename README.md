@@ -68,3 +68,28 @@ lemma pods import ./pod --pod distill --dry-run                 # validate every
 Design + plan: [`docs/superpowers/specs`](docs/superpowers/specs/) and
 [`docs/superpowers/plans`](docs/superpowers/plans/). Lemma conventions reference:
 [`docs/superpowers/notes/lemma-conventions.md`](docs/superpowers/notes/lemma-conventions.md).
+
+## Non-bundled setup (run once after import)
+
+Files, connectors, accounts, and runtime profiles are pod/org runtime state — they
+do **not** round-trip through `pods import`. Re-create them with the CLI:
+
+```powershell
+# 1. Editable playbooks → pod file store (read by the triage agent)
+lemma files upload ./pod/files/triage-rules.md   /knowledge/triage-rules.md   --pod distill
+lemma files upload ./pod/files/priority-rubric.md /knowledge/priority-rubric.md --pod distill
+
+# 2. (Optional) Bring-your-own model key so agents don't spend Lemma credits.
+#    Agents are pinned to the runtime profile id in their *.json (agent_runtime.profile_id);
+#    update that id if you re-create the profile.
+lemma runtime profiles create OPENAI_COMPATIBLE --name "OpenAI BYO" `
+  --base-url https://api.openai.com/v1 --api-key <YOUR_OPENAI_KEY> `
+  --default-model gpt-4o-mini --model gpt-4o-mini --model gpt-4o
+
+# 3. Gmail ingestion connector (powers "Pull from Gmail" + the ingest_gmail function)
+lemma connectors auth-configs create gmail --name workspace-gmail --provider LEMMA
+#    Then connect your Google account via the Lemma web dashboard → Connectors → Gmail
+#    (the `connect-requests` CLI is broken in lemma 0.5.3). Verify:
+lemma connectors overview
+lemma functions run ingest_gmail --pod distill --data '{"query":"in:inbox newer_than:7d","max_results":5}'
+```

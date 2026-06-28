@@ -1,0 +1,12 @@
+{
+  "name": "ingest_gmail",
+  "description": "Fetch recent feedback emails via the Gmail connector, format them as a batch, and start the triage_batch workflow.",
+  "type": "JOB",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "connector", "resource_name": "gmail",
+      "permission_ids": ["connector.use"] },
+    { "resource_type": "workflow", "resource_name": "triage_batch",
+      "permission_ids": ["workflow.read", "workflow.execute"] }
+  ] }
+}
