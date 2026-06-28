@@ -1,0 +1,10 @@
+{
+  "name": "p0-slack-alert",
+  "schedule_type": "DATASTORE",
+  "config": {
+    "table_name": "issues",
+    "operations": ["INSERT"]
+  },
+  "workflow_name": "notify_p0",
+  "is_active": true
+}

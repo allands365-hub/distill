@@ -1,0 +1,47 @@
+{
+  "name": "notify_p0",
+  "description": "Fires on every new issue INSERT. Routes to Slack alert only when priority == P0.",
+  "start": {
+    "type": "DATASTORE_EVENT",
+    "config": {
+      "table_name": "issues",
+      "operations": ["INSERT"]
+    }
+  },
+  "nodes": [
+    {
+      "id": "is_p0",
+      "type": "DECISION",
+      "label": "Is P0?",
+      "config": {
+        "rules": [
+          {
+            "condition": "start.payload.priority == `P0`",
+            "next_node_id": "notify"
+          }
+        ]
+      }
+    },
+    {
+      "id": "notify",
+      "type": "FUNCTION",
+      "label": "Notify Slack",
+      "config": {
+        "function_name": "notify_slack",
+        "input_mapping": {
+          "issue_id": { "type": "expression", "value": "start.metadata.record_id" }
+        }
+      }
+    },
+    {
+      "id": "done",
+      "type": "END",
+      "label": "Done"
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "is_p0", "target": "done", "label": "not P0 (default)" },
+    { "id": "e2", "source": "is_p0", "target": "notify" },
+    { "id": "e3", "source": "notify", "target": "done" }
+  ]
+}

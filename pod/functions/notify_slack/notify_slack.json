@@ -1,0 +1,20 @@
+{
+  "name": "notify_slack",
+  "description": "Send a Slack DM alert when a P0 issue is created. Reads the issue from the issues table and posts a formatted message to the given channel/user.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": {
+    "grants": [
+      {
+        "resource_type": "datastore_table",
+        "resource_name": "issues",
+        "permission_ids": ["datastore.table.read", "datastore.record.read"]
+      },
+      {
+        "resource_type": "connector",
+        "resource_name": "slack",
+        "permission_ids": ["connector.use"]
+      }
+    ]
+  }
+}
