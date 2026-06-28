@@ -2,7 +2,7 @@
   "name": "triage",
   "description": "Classifies a piece of raw user feedback as bug/feature/question/duplicate/spam with a confidence score.",
   "instruction": { "$file": "instruction.md" },
-  "toolsets": [],
+  "toolsets": ["POD"],
   "visibility": "POD",
   "agent_runtime": { "profile_id": "019f0ccf-773d-74e1-9ae6-1116c57d1134" },
   "input_schema": {
@@ -22,5 +22,8 @@
     },
     "required": ["type", "confidence", "reasoning"]
   },
-  "permissions": { "grants": [] }
+  "permissions": { "grants": [
+    { "resource_type": "folder", "resource_name": "/knowledge",
+      "permission_ids": ["folder.read"] }
+  ] }
 }
