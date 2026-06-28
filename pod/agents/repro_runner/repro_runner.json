@@ -1,0 +1,28 @@
+{
+  "name": "repro_runner",
+  "description": "Attempts to reproduce a bug in a sandbox shell, runs a minimal repro, and returns validated steps + captured evidence.",
+  "instruction": { "$file": "instruction.md" },
+  "toolsets": ["WORKSPACE_CLI"],
+  "visibility": "POD",
+  "agent_runtime": { "profile_id": "system:lemma" },
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "body": { "type": "string" },
+      "repro_steps": { "type": "string" }
+    },
+    "required": ["body"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "reproduced": { "type": "boolean" },
+      "steps": { "type": "string" },
+      "evidence": { "type": "string" },
+      "root_cause": { "type": "string" }
+    },
+    "required": ["reproduced", "steps", "evidence", "root_cause"]
+  },
+  "permissions": { "grants": [] }
+}
