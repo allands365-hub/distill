@@ -92,4 +92,16 @@ lemma connectors auth-configs create gmail --name workspace-gmail --provider LEM
 #    (the `connect-requests` CLI is broken in lemma 0.5.3). Verify:
 lemma connectors overview
 lemma functions run ingest_gmail --pod distill --data '{"query":"in:inbox newer_than:7d","max_results":5}'
+
+# 4. Auto-triage: WEBHOOK schedule on new Gmail messages -> triage_email workflow.
+#    (triage_email's start config holds the trigger; the schedule derives it.)
+lemma schedules create --pod distill --workflow triage_email --webhook-source gmail `
+  --account <gmail-account-id> --name gmail-inbound `
+  --filter "Only process emails describing a software bug, feature request, or customer complaint. Ignore newsletters, receipts, security alerts, and automated notifications."
 ```
+
+**Auto-triage:** with the schedule active, a new inbound email that passes the LLM
+filter triggers the `triage_email` workflow automatically — classified, prioritized,
+deduped, and saved to the board with no button press (lights up the Schedules
+primitive). Verify firing by emailing a bug report to the connected inbox and
+watching the board after the trigger's polling interval.

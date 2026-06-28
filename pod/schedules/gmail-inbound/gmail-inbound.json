@@ -1,0 +1,9 @@
+{
+  "name": "gmail-inbound",
+  "schedule_type": "WEBHOOK",
+  "config": { "source": "gmail" },
+  "account_id": "019f0cdf-18c3-708d-a714-eade1292f4b7",
+  "workflow_name": "triage_email",
+  "filter_instruction": "Only process emails that describe a software bug, feature request, or customer complaint. Ignore newsletters, receipts, security alerts, and automated notifications.",
+  "is_active": true
+}

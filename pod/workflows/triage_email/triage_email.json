@@ -1,0 +1,57 @@
+{
+  "name": "triage_email",
+  "description": "Triage a single inbound email (delivered by the Gmail new-message webhook) into an issue: classify, prioritize, dedup, repro for bugs, and save. Reads start.payload from the trigger.",
+  "start": { "type": "EVENT", "config": {
+    "connector_id": "gmail",
+    "connector_trigger_id": "gmail:composio:gmail_new_gmail_message" } },
+  "visibility": "POD",
+  "nodes": [
+    { "id": "classify", "type": "AGENT", "label": "Classify",
+      "config": { "agent_name": "triage",
+        "input_mapping": {
+          "title": { "type": "expression", "value": "start.payload.subject" },
+          "body": { "type": "expression", "value": "start.payload.message_text" } } } },
+    { "id": "prio", "type": "FUNCTION", "label": "Priority",
+      "config": { "function_name": "detect_priority",
+        "input_mapping": {
+          "item_type": { "type": "expression", "value": "classify.type" },
+          "title": { "type": "expression", "value": "start.payload.subject" },
+          "body": { "type": "expression", "value": "start.payload.message_text" } } } },
+    { "id": "dup", "type": "FUNCTION", "label": "Duplicates",
+      "config": { "function_name": "detect_duplicates",
+        "input_mapping": {
+          "title": { "type": "expression", "value": "start.payload.subject" },
+          "body": { "type": "expression", "value": "start.payload.message_text" },
+          "threshold": { "type": "literal", "value": 0.5 } } } },
+    { "id": "is_bug", "type": "DECISION", "label": "Is bug?",
+      "config": { "rules": [ { "condition": "classify.type == 'bug'", "next_node_id": "repro" } ] } },
+    { "id": "repro", "type": "AGENT", "label": "Reproduction",
+      "config": { "agent_name": "reproduction",
+        "input_mapping": {
+          "title": { "type": "expression", "value": "start.payload.subject" },
+          "body": { "type": "expression", "value": "start.payload.message_text" } } } },
+    { "id": "save", "type": "FUNCTION", "label": "Save issue",
+      "config": { "function_name": "save_issue",
+        "input_mapping": {
+          "source_text": { "type": "expression", "value": "start.payload.message_text" },
+          "source_channel": { "type": "literal", "value": "email" },
+          "title": { "type": "expression", "value": "start.payload.subject" },
+          "item_type": { "type": "expression", "value": "classify.type" },
+          "confidence": { "type": "expression", "value": "classify.confidence" },
+          "reasoning": { "type": "expression", "value": "classify.reasoning" },
+          "priority": { "type": "expression", "value": "prio.priority", "optional": true },
+          "repro_steps": { "type": "expression", "value": "repro.repro_steps", "optional": true },
+          "linked_to": { "type": "expression", "value": "dup.linked_to", "optional": true },
+          "status": { "type": "literal", "value": "auto" } } } },
+    { "id": "end", "type": "END", "label": "Done" }
+  ],
+  "edges": [
+    { "id": "e1", "source": "classify", "target": "prio" },
+    { "id": "e2", "source": "prio", "target": "dup" },
+    { "id": "e3", "source": "dup", "target": "is_bug" },
+    { "id": "e4", "source": "is_bug", "target": "save" },
+    { "id": "e5", "source": "is_bug", "target": "repro" },
+    { "id": "e6", "source": "repro", "target": "save" },
+    { "id": "e7", "source": "save", "target": "end" }
+  ]
+}
