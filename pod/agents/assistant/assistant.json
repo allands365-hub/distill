@@ -1,0 +1,12 @@
+{
+  "name": "assistant",
+  "description": "Conversational assistant that answers questions about triaged issues (list by priority/status, daily summary, counts).",
+  "instruction": { "$file": "instruction.md" },
+  "toolsets": ["POD"],
+  "visibility": "POD",
+  "agent_runtime": { "profile_id": "019f0ccf-773d-74e1-9ae6-1116c57d1134" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "issues",
+      "permission_ids": ["datastore.table.read", "datastore.record.read"] }
+  ] }
+}

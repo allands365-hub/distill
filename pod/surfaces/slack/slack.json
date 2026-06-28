@@ -1,0 +1,11 @@
+{
+  "name": "slack",
+  "platform": "SLACK",
+  "default_agent_name": "assistant",
+  "credential_mode": "CUSTOM",
+  "account_id": "019f0e06-dbc3-75f9-96fb-2fa633e6c95a",
+  "is_enabled": true,
+  "config": {
+    "dm_conversation_reset_after_hours": 24
+  }
+}
