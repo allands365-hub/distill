@@ -1,0 +1,72 @@
+{
+  "name": "sandbox_repro",
+  "description": "On-demand sandbox reproduction: load an issue, run the repro_runner agent, save results back to the issue row.",
+  "start": { "type": "MANUAL" },
+  "visibility": "POD",
+  "nodes": [
+    {
+      "id": "intake",
+      "type": "FORM",
+      "label": "Issue intake",
+      "config": {
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "issue_id": { "type": "string" }
+          },
+          "required": ["issue_id"]
+        }
+      }
+    },
+    {
+      "id": "load",
+      "type": "FUNCTION",
+      "label": "Load issue fields",
+      "config": {
+        "function_name": "get_issue_fields",
+        "input_mapping": {
+          "issue_id": { "type": "expression", "value": "intake.issue_id" }
+        }
+      }
+    },
+    {
+      "id": "repro",
+      "type": "AGENT",
+      "label": "Repro runner",
+      "config": {
+        "agent_name": "repro_runner",
+        "input_mapping": {
+          "title": { "type": "expression", "value": "load.title" },
+          "body": { "type": "expression", "value": "load.body" },
+          "repro_steps": { "type": "expression", "value": "load.repro_steps", "optional": true }
+        }
+      }
+    },
+    {
+      "id": "save",
+      "type": "FUNCTION",
+      "label": "Save repro result",
+      "config": {
+        "function_name": "save_repro",
+        "input_mapping": {
+          "issue_id": { "type": "expression", "value": "intake.issue_id" },
+          "reproduced": { "type": "expression", "value": "repro.reproduced" },
+          "steps": { "type": "expression", "value": "repro.steps", "optional": true },
+          "evidence": { "type": "expression", "value": "repro.evidence", "optional": true },
+          "root_cause": { "type": "expression", "value": "repro.root_cause", "optional": true }
+        }
+      }
+    },
+    {
+      "id": "done",
+      "type": "END",
+      "label": "Done"
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "intake", "target": "load" },
+    { "id": "e2", "source": "load", "target": "repro" },
+    { "id": "e3", "source": "repro", "target": "save" },
+    { "id": "e4", "source": "save", "target": "done" }
+  ]
+}

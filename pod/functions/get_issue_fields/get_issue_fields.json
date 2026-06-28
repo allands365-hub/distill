@@ -1,0 +1,10 @@
+{
+  "name": "get_issue_fields",
+  "description": "Read an issue row and return title, body (source_text), and repro_steps for the repro_runner agent.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "issues",
+      "permission_ids": ["datastore.table.read", "datastore.record.read"] }
+  ] }
+}

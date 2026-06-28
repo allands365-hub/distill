@@ -258,7 +258,31 @@ function buildCard(r){
       (function(rid){ btnL.onclick = function(){ window.toLinear(rid); }; })(r.id);
       actL.appendChild(btnL);
     }
+    var btnR = document.createElement('button');
+    btnR.className = 'ghost';
+    btnR.textContent = 'Sandbox repro';
+    (function(rid){ btnR.onclick = function(){ window.sandboxRepro(rid); }; })(r.id);
+    actL.appendChild(btnR);
+    if(r.reproduced){
+      var reproTag = document.createElement('span');
+      reproTag.className = 'chip';
+      reproTag.style.cssText = 'background:#dcfce7;color:#166534;margin-left:4px';
+      reproTag.textContent = '✓ reproduced';
+      actL.appendChild(reproTag);
+    }
     wrap.appendChild(actL);
+    if(r.repro_evidence){
+      var evDetails = document.createElement('details');
+      var evSummary = document.createElement('summary');
+      evSummary.style.cssText = 'font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);margin-top:6px';
+      evSummary.textContent = 'Sandbox evidence';
+      var evPre = document.createElement('div');
+      evPre.className = 'repro';
+      evPre.textContent = r.repro_evidence;
+      evDetails.appendChild(evSummary);
+      evDetails.appendChild(evPre);
+      wrap.appendChild(evDetails);
+    }
   }
   return wrap;
 }
@@ -291,6 +315,7 @@ function render(){
 window.approve=function(id){ updateIssue(id,'approved'); };
 window.markFixed=function(id){ updateIssue(id,'fixed'); };
 window.toLinear=async function(id){ toast('Creating Linear issue…'); try{ var r=await fnRun('create_linear_issue',{issue_id:id}); toast(r && r.url ? ('Created: '+r.url) : 'Linear issue created.'); }catch(e){ toast('Linear create failed.'); } };
+window.sandboxRepro=async function(id){ toast('Reproducing in sandbox… (takes ~30–60s)'); try{ await fnRun('start_sandbox_repro',{issue_id:id}); }catch(e){} };
 
 async function loadConnections(){
   var connected = {};

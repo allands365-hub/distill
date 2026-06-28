@@ -1,0 +1,10 @@
+{
+  "name": "start_sandbox_repro",
+  "description": "Kick off the sandbox_repro workflow for a specific issue by id.",
+  "type": "JOB",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "workflow", "resource_name": "sandbox_repro",
+      "permission_ids": ["workflow.read", "workflow.execute"] }
+  ] }
+}

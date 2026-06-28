@@ -1,0 +1,10 @@
+{
+  "name": "save_repro",
+  "description": "Write sandbox repro results (reproduced flag, steps, evidence, root_cause) back to an issue row.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "issues",
+      "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"] }
+  ] }
+}

@@ -18,7 +18,9 @@
     { "name": "linked_to", "type": "TEXT", "required": false, "max_length": 64 },
     { "name": "status", "type": "ENUM", "required": true, "default": "incoming",
       "options": ["incoming", "triaged", "needs_approval", "approved", "fixed"] },
-    { "name": "external_url", "type": "TEXT", "required": false, "max_length": 300 }
+    { "name": "external_url", "type": "TEXT", "required": false, "max_length": 300 },
+    { "name": "reproduced", "type": "BOOLEAN", "required": false },
+    { "name": "repro_evidence", "type": "TEXT", "required": false, "max_length": 6000 }
   ],
   "config": {}
 }
