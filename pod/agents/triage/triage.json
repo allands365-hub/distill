@@ -4,6 +4,7 @@
   "instruction": { "$file": "instruction.md" },
   "toolsets": [],
   "visibility": "POD",
+  "agent_runtime": { "profile_id": "019f0ccf-773d-74e1-9ae6-1116c57d1134" },
   "input_schema": {
     "type": "object",
     "properties": {
