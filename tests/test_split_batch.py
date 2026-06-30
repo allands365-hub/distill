@@ -44,6 +44,17 @@ def test_headers_recognized_after_leading_blank_lines():
     assert items[0]["body"] == "Export yields an empty file."
 
 
+def test_crlf_separators_split_correctly():
+    # Windows/clipboard input arrives CRLF — the separator must still match.
+    raw = "Channel: email\r\nfirst report\r\n---\r\nChannel: slack\r\nsecond report"
+    items = split_batch(raw)
+    assert len(items) == 2
+    assert items[0]["channel"] == "email"
+    assert items[0]["body"] == "first report"
+    assert items[1]["channel"] == "slack"
+    assert items[1]["body"] == "second report"
+
+
 def test_text_after_body_is_not_parsed_as_header():
     # A 'Title:'-looking line that appears after real body text stays in the body.
     raw = "Something broke.\nTitle: not a header here"

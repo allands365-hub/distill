@@ -12,6 +12,9 @@ VALID_CHANNELS = {"slack", "email", "github", "support", "other"}
 def split_items(raw_text: str) -> List[Dict[str, str]]:
     if not raw_text or not raw_text.strip():
         return []
+    # Normalize line endings — pasted/Windows input arrives as CRLF (\r\n),
+    # which would otherwise break the "\n---\n" separator match.
+    raw_text = raw_text.replace("\r\n", "\n").replace("\r", "\n")
     chunks = raw_text.split("\n---\n")
     items: List[Dict[str, str]] = []
     for chunk in chunks:
