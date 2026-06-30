@@ -124,6 +124,12 @@ requires the native runtime.)
 - **Gmail** — connected; `ingest_gmail` + "Pull from Gmail" + `gmail-inbound` auto-triage schedule.
 - **Slack** — connected; `assistant` surface (Q&A) + P0 alert (`notify_slack` + `notify_p0` schedule).
 - **Linear** — connected; `create_linear_issue` (triaged bug → Linear issue) + card button.
-- **WhatsApp** — account connected + surface bound to `assistant`, **but** Lemma's WhatsApp
-  connector operations aren't provisioned yet (`send_text_message` → 404) and inbound needs
-  the Meta webhook configured. Wired, pending platform/Meta resolution — not demo-critical.
+- **WhatsApp** — account connected + surface bound to the `assistant` agent. **Intended UX:**
+  text the number (e.g. "hi", "P1 bugs", "summary for today") and the `assistant` agent
+  answers conversationally over the live `issues` table — list bugs by priority/status, get a
+  daily summary, query counts — the same agent that powers the Slack surface. **Status:** wired
+  but not yet operational — Lemma's WhatsApp connector operations aren't provisioned yet
+  (`send_text_message` → 404), inbound needs the Meta webhook configured, and the demo used a
+  24-hour Meta test-app token (now expired; needs a permanent System User token). Pending
+  platform/Meta resolution — not demo-critical, since the Slack surface delivers the identical
+  conversational assistant today.
