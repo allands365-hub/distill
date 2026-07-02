@@ -59,6 +59,8 @@
   #progress.show{display:flex}
   .spinner{width:16px;height:16px;border:2px solid #bfdbfe;border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite;flex:none}
   @keyframes spin{to{transform:rotate(360deg)}}
+  .card{cursor:grab} .card:active{cursor:grabbing} .card.dragging{opacity:.5}
+  .col.dragover{outline:2px dashed var(--accent);outline-offset:2px;background:#f5f8ff}
 </style>
 </head>
 <body>
@@ -207,6 +209,11 @@ async function onGmail(){
 function buildCard(r){
   var wrap = document.createElement('div');
   wrap.className = 'card' + (r.priority ? ' p-'+r.priority : '');
+  // Drag to move a card between columns; the drop sets the new status and the
+  // status-driven buttons (Approve / Mark Fixed) then appear automatically.
+  wrap.draggable = true;
+  wrap.ondragstart = function(e){ e.dataTransfer.setData('text/plain', r.id); e.dataTransfer.effectAllowed='move'; wrap.classList.add('dragging'); };
+  wrap.ondragend = function(){ wrap.classList.remove('dragging'); };
 
   var chips = document.createElement('div');
   chips.className = 'chips';
@@ -301,6 +308,13 @@ function buildCard(r){
       reproTag.style.cssText = 'background:#dcfce7;color:#166534;margin-left:4px';
       reproTag.textContent = '✓ reproduced';
       actL.appendChild(reproTag);
+    } else if(window._reproducing && window._reproducing.has(r.id)){
+      var spinTag = document.createElement('span');
+      spinTag.className = 'chip';
+      spinTag.style.cssText = 'background:#eff6ff;color:#1e40af;margin-left:4px;display:inline-flex;align-items:center;gap:5px';
+      var sp = document.createElement('span'); sp.className='spinner'; sp.style.cssText='width:11px;height:11px;border-width:2px';
+      spinTag.appendChild(sp); spinTag.appendChild(document.createTextNode('Reproducing…'));
+      actL.appendChild(spinTag);
     }
     wrap.appendChild(actL);
     if(r.repro_evidence){
@@ -339,6 +353,16 @@ function render(){
     var rows=all.filter(function(r){return (r.status||'incoming')===c[0];});
     var col = document.createElement('div');
     col.className = 'col';
+    (function(targetStatus){
+      col.ondragover = function(e){ e.preventDefault(); e.dataTransfer.dropEffect='move'; col.classList.add('dragover'); };
+      col.ondragleave = function(){ col.classList.remove('dragover'); };
+      col.ondrop = function(e){
+        e.preventDefault(); col.classList.remove('dragover');
+        var id = e.dataTransfer.getData('text/plain');
+        var cur = id && issues.get(id);
+        if(cur && (cur.status||'incoming') !== targetStatus) updateIssue(id, targetStatus);
+      };
+    })(c[0]);
     var h2 = document.createElement('h2');
     h2.textContent = c[1]+' ';
     var b = document.createElement('b');
@@ -367,7 +391,14 @@ window.dismiss=async function(id){
   toast('Ticket dismissed.');
 };
 window.toLinear=async function(id){ toast('Creating Linear issue…'); try{ var r=await fnRun('create_linear_issue',{issue_id:id}); toast(r && r.url ? ('Created: '+r.url) : 'Linear issue created.'); }catch(e){ toast('Linear create failed.'); } };
-window.sandboxRepro=async function(id){ toast('Reproducing in sandbox… (takes ~30–60s)'); try{ await fnRun('start_sandbox_repro',{issue_id:id}); }catch(e){} };
+window._reproducing = new Set();
+window.sandboxRepro=async function(id){
+  window._reproducing.add(id); render();
+  toast('Reproducing in sandbox… (takes ~30–60s)');
+  try{ await fnRun('start_sandbox_repro',{issue_id:id}); }catch(e){}
+  // clear the spinner after the sandbox typically finishes; success flips the ✓ badge via watchChanges.
+  setTimeout(function(){ window._reproducing.delete(id); render(); }, 90000);
+};
 
 async function loadConnections(){
   var connected = {};
