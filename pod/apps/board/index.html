@@ -169,7 +169,9 @@ async function loadNotes(){
     div.appendChild(pre);
     el.textContent = '';
     el.appendChild(div);
+    return !!(items[0] && items[0].notes_md);
   }catch(e){}
+  return false;
 }
 
 async function fnRun(name, data){
@@ -198,10 +200,20 @@ async function onTriage(){
 async function onNotes(){
   var fixed = [...issues.values()].filter(function(r){ return r.status==='fixed'; }).length;
   if(!fixed){ toast('No fixed issues yet — mark issues as Fixed to include them in release notes.'); return; }
-  toast('Generating release notes for '+fixed+' fixed issue'+(fixed===1?'':'s')+'…');
+  toast('Generating release notes for '+fixed+' fixed issue'+(fixed===1?'':'s')+'… (~30–60s)');
+  var before = (document.getElementById('notesPanel').textContent||'');
   try { await fnRun('start_release_notes', {}); } catch(e){}
-  // the workflow writes the release row asynchronously; refresh a few times.
-  [6000, 12000, 20000].forEach(function(ms){ setTimeout(loadNotes, ms); });
+  // the release_notes agent writes the row asynchronously and can take up to a
+  // minute — poll until fresh notes appear (or ~2 min timeout) instead of a few
+  // fixed refreshes that can miss it.
+  var tries = 0;
+  var iv = setInterval(async function(){
+    tries++;
+    var found = await loadNotes();
+    var now = (document.getElementById('notesPanel').textContent||'');
+    if(found && now !== before){ clearInterval(iv); toast('Release notes ready.'); }
+    else if(tries >= 30){ clearInterval(iv); }
+  }, 4000);
 }
 async function onGmail(){
   toast('Pulling recent emails from Gmail... triaged issues will appear shortly.');
