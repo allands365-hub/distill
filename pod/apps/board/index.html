@@ -55,6 +55,10 @@
   .dot{width:8px;height:8px;border-radius:50%;background:#cbd2dc}
   .dot.on{background:#16a34a}
   .conn button{padding:3px 8px;font-size:11px;border-radius:8px}
+  #progress{display:none;align-items:center;gap:10px;margin:14px 22px 0;padding:12px 16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;color:#1e40af;font-size:14px;font-weight:500}
+  #progress.show{display:flex}
+  .spinner{width:16px;height:16px;border:2px solid #bfdbfe;border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite;flex:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -68,6 +72,7 @@
   </div>
 </header>
 <div class="connbar" id="connbar"></div>
+<div id="progress"><span class="spinner"></span><span id="progressText"></span></div>
 <main>
   <div class="board" id="board"></div>
   <div id="notesPanel"></div>
@@ -92,6 +97,18 @@ var ORG_ID = _cfg.orgId || _cfg.organizationId || _cfg.org_id || "019f099b-4f6e-
 var CONNECTORS = [["gmail","Gmail"],["slack","Slack"],["linear","Linear"]];
 
 function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},2600); }
+// Live "triaging in progress" banner — gives the operator visible feedback during
+// the ~1-2 min the workflow takes, instead of an unchanged board that looks broken.
+var pendingExpected = 0, pendingBaseline = 0;
+function showProgress(n){
+  pendingExpected = n; pendingBaseline = issues.size;
+  var p=document.getElementById('progress');
+  document.getElementById('progressText').textContent =
+    'Triaging '+n+' item'+(n===1?'':'s')+'… classified issues appear below as they’re ready (~1–2 min).';
+  p.classList.add('show'); clearTimeout(p._t); p._t=setTimeout(hideProgress, 240000);
+}
+function hideProgress(){ var p=document.getElementById('progress'); if(p){ p.classList.remove('show'); clearTimeout(p._t); } pendingExpected=0; }
+function maybeHideProgress(){ if(pendingExpected>0 && issues.size >= pendingBaseline + pendingExpected) hideProgress(); }
 function esc(x){ return (x==null?'':String(x)).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
 
 async function boot(){
@@ -105,6 +122,7 @@ async function boot(){
       if(f.operation==='delete') issues.delete(f.record_id);
       else issues.set(f.record_id, Object.assign({}, issues.get(f.record_id)||{}, f.payload||{}, {id:f.record_id}));
       render();
+      maybeHideProgress();
     }});
   } catch(e){ /* watch optional */ }
   document.getElementById('triageBtn').onclick = onTriage;
@@ -141,10 +159,10 @@ async function loadNotes(){
 }
 
 async function fnRun(name, data){
-  // await so a rejected promise (wrong signature) actually hits the fallback,
-  // not just a synchronous throw.
-  try { return await client.functions.run(name, data); }
-  catch(e){ return await client.functions.run({ functionName:name, data:data }); }
+  // SDK 0.5.4: client.functions.run(name, options) sends { input_data: options.input }
+  // to the backend. The payload MUST be nested under `input`, or the request body
+  // goes out empty ({}) and the function runs with no arguments.
+  return await client.functions.run(name, { input: data });
 }
 async function updateIssue(id, status){
   var cur = issues.get(id); if(cur){ cur.status=status; issues.set(id,cur); render(); }
@@ -157,8 +175,10 @@ async function updateIssue(id, status){
 async function onTriage(){
   var ta=document.getElementById('batch'); var text=(ta.value||'').trim();
   if(!text){ toast('Paste some feedback first.'); return; }
-  toast('Triaging... new issues will appear shortly.');
-  try { await fnRun('start_triage', { raw_text:text }); } catch(e){ /* fire-and-forget */ }
+  var n = text.split(/\r?\n---\r?\n/).filter(function(s){ return s.trim(); }).length;
+  showProgress(n);
+  try { await fnRun('start_triage', { raw_text:text }); }
+  catch(e){ hideProgress(); toast('Could not start triage — check your connection.'); return; }
   ta.value='';
 }
 async function onNotes(){
