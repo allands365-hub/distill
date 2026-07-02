@@ -103,12 +103,18 @@ var pendingExpected = 0, pendingBaseline = 0;
 function showProgress(n){
   pendingExpected = n; pendingBaseline = issues.size;
   var p=document.getElementById('progress');
-  document.getElementById('progressText').textContent =
-    'Triaging '+n+' item'+(n===1?'':'s')+'… classified issues appear below as they’re ready (~1–2 min).';
-  p.classList.add('show'); clearTimeout(p._t); p._t=setTimeout(hideProgress, 240000);
+  p.classList.add('show'); clearTimeout(p._t); p._t=setTimeout(hideProgress, 300000);
+  updateProgress();
 }
 function hideProgress(){ var p=document.getElementById('progress'); if(p){ p.classList.remove('show'); clearTimeout(p._t); } pendingExpected=0; }
-function maybeHideProgress(){ if(pendingExpected>0 && issues.size >= pendingBaseline + pendingExpected) hideProgress(); }
+// Live queue counter — updates as each triaged card lands so the operator sees progress.
+function updateProgress(){
+  if(pendingExpected<=0) return;
+  var done = Math.max(0, issues.size - pendingBaseline);
+  if(done >= pendingExpected){ hideProgress(); return; }
+  document.getElementById('progressText').textContent =
+    'Triaging… '+done+' of '+pendingExpected+' item'+(pendingExpected===1?'':'s')+' classified. New cards appear below as they’re ready.';
+}
 function esc(x){ return (x==null?'':String(x)).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
 
 async function boot(){
@@ -128,7 +134,7 @@ async function boot(){
         issues.set(f.record_id, Object.assign({}, issues.get(f.record_id)||{}, f.payload, {id:f.record_id}));
       }
       render();
-      maybeHideProgress();
+      updateProgress();
     }});
   } catch(e){ /* watch optional */ }
   document.getElementById('triageBtn').onclick = onTriage;
