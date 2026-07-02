@@ -196,7 +196,9 @@ async function onTriage(){
   ta.value='';
 }
 async function onNotes(){
-  toast('Generating release notes...');
+  var fixed = [...issues.values()].filter(function(r){ return r.status==='fixed'; }).length;
+  if(!fixed){ toast('No fixed issues yet — mark issues as Fixed to include them in release notes.'); return; }
+  toast('Generating release notes for '+fixed+' fixed issue'+(fixed===1?'':'s')+'…');
   try { await fnRun('start_release_notes', {}); } catch(e){}
   // the workflow writes the release row asynchronously; refresh a few times.
   [6000, 12000, 20000].forEach(function(ms){ setTimeout(loadNotes, ms); });
