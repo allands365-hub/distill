@@ -119,8 +119,14 @@ async function boot(){
   await loadNotes();
   try {
     client.datastore.watchChanges({ table:'issues', onChange:function(f){
-      if(f.operation==='delete') issues.delete(f.record_id);
-      else issues.set(f.record_id, Object.assign({}, issues.get(f.record_id)||{}, f.payload||{}, {id:f.record_id}));
+      var op = (f.operation||'').toLowerCase();
+      if(op==='delete' || op==='remove' || f.deleted){
+        issues.delete(f.record_id);
+      } else if(f.payload && Object.keys(f.payload).length){
+        // Only upsert when the event carries real fields — otherwise a stray
+        // empty-payload event would create a blank "?" ghost card.
+        issues.set(f.record_id, Object.assign({}, issues.get(f.record_id)||{}, f.payload, {id:f.record_id}));
+      }
       render();
       maybeHideProgress();
     }});
@@ -319,7 +325,8 @@ function buildCard(r){
 }
 
 function render(){
-  var all=[...issues.values()];
+  // Skip empty/ghost records (no content) so a stray event never shows a "?" card.
+  var all=[...issues.values()].filter(function(r){ return r && (r.type || r.title || r.source_text); });
   var board=document.getElementById('board');
   board.textContent = '';
   COLS.forEach(function(c){
