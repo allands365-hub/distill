@@ -304,6 +304,17 @@ function buildCard(r){
       wrap.appendChild(evDetails);
     }
   }
+  // Dismiss/delete — lets the operator reject a flagged (needs_approval) item or
+  // remove any mis-triaged / spam ticket from the board entirely.
+  var actD = document.createElement('div');
+  actD.className = 'act';
+  var btnD = document.createElement('button');
+  btnD.className = 'ghost';
+  btnD.style.cssText = 'color:#b91c1c;border-color:#fecaca';
+  btnD.textContent = (r.status==='needs_approval') ? 'Dismiss' : 'Delete';
+  (function(rid){ btnD.onclick = function(){ window.dismiss(rid); }; })(r.id);
+  actD.appendChild(btnD);
+  wrap.appendChild(actD);
   return wrap;
 }
 
@@ -334,6 +345,14 @@ function render(){
 }
 window.approve=function(id){ updateIssue(id,'approved'); };
 window.markFixed=function(id){ updateIssue(id,'fixed'); };
+window.dismiss=async function(id){
+  if(!confirm('Remove this ticket from the board? This cannot be undone.')) return;
+  issues.delete(id); render();  // optimistic
+  try { await client.records.delete('issues', id); }
+  catch(e){ try { await client.records.delete({ tableName:'issues', recordId:id }); }
+            catch(e2){ toast('Delete failed.'); await loadIssues(); return; } }
+  toast('Ticket dismissed.');
+};
 window.toLinear=async function(id){ toast('Creating Linear issue…'); try{ var r=await fnRun('create_linear_issue',{issue_id:id}); toast(r && r.url ? ('Created: '+r.url) : 'Linear issue created.'); }catch(e){ toast('Linear create failed.'); } };
 window.sandboxRepro=async function(id){ toast('Reproducing in sandbox… (takes ~30–60s)'); try{ await fnRun('start_sandbox_repro',{issue_id:id}); }catch(e){} };
 
